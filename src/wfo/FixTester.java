@@ -1173,11 +1173,11 @@ public class FixTester {
         Parameter bestRecovFac = new Parameter();
         Parameter bestWinKoo = new Parameter();
         if (learnWeeks == 1) {
-            quDealFilter = GlobalTest.FILT_1_WEEKS;
+            quDealFilter = Settings.FILT_1_WEEKS;
         } else if (learnWeeks == 2) {
-            quDealFilter = GlobalTest.FILT_2_WEEKS;
+            quDealFilter = Settings.FILT_2_WEEKS;
         } else if (learnWeeks == 4) {
-            quDealFilter = GlobalTest.FILT_4_WEEKS;
+            quDealFilter = Settings.FILT_4_WEEKS;
         }
 
         for (int i = 0; i < this.sortByGenRes.length; i++) {
