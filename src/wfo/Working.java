@@ -1,10 +1,12 @@
 package wfo;
 
+import javax.xml.stream.FactoryConfigurationError;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
+import java.util.Scanner;
 
 /**
  * Класс добавляет к родителю поля и методы, необходимые для работы торгового алгоритма, а так же сами торговые
@@ -93,10 +95,9 @@ public class Working extends QuoteColArr {
     protected String comment;
 
 
-    // TODO создать перегруженный метод singleRunArr принимающий две даты, старта и финиша и создающий участок котировки между ними.
 
     /**
-     * Создаёт новый объект класса FinRes для одиночного тестирования множества прогонов или вывода значений работы.
+     * Создаёт новый объект класса FinRes для одиночного тестирования множества прогонов или вывода значений работы
      * торгового алгоритма.
      * @param quWeeks количество недель для создаия отрезка котировки от последней даты в файле.
      * @return Новый объект класса FinRes для одиночного тестирования множества прогонов или вывода значений работы.
@@ -139,6 +140,69 @@ public class Working extends QuoteColArr {
             closeArray[newIndex] = this.getClose()[i];
             volumeArray[newIndex] = this.getVolume()[i];
             if (this.getDate()[i] >= newBegining && indicator) {
+                newArr.startIndex = newIndex;
+                indicator = false;
+            }
+            newIndex++;
+        }
+        newArr.ticker = tickArray;
+        newArr.timeframe = tfArray;
+        newArr.date = dateArray;
+        newArr.time = timeArray;
+        newArr.open = openArray;
+        newArr.high = highArray;
+        newArr.low = lowArray;
+        newArr.close = closeArray;
+        newArr.volume = volumeArray;
+
+        return newArr;
+    }
+
+    /**
+     * Создаёт новый объект класса FinRes для одиночного тестирования множества прогонов или вывода значений работы
+     * торгового алгоритма, отрезок формируется исходя из ограничивающих дат.
+     * @param firstDate Дата начала работы алгоритма. (включена)
+     * @param secondDate Лата окончиния работы алгоритма (включена)
+     * @return Новый объект класса FinRes для одиночного тестирования множества прогонов или вывода значений работы.
+     */
+    public FinRes singleRunArr (int firstDate, int secondDate) {
+        Dates startDate = new Dates();
+        startDate.daysMinus(firstDate, 7);
+        int begining = startDate.getDate();
+        int counter1 = 0;
+        int counter2 = 0;
+        for (int i = 0; i < this.getDate().length; i++) {
+            if (this.getDate()[i] >= begining && this.getDate()[i] <= secondDate) {
+                counter1++;
+            }
+            if (this.getDate()[i] >= begining) {
+                counter2++;
+            }
+        }
+        String[] tickArray = new String[counter1];
+        int[] tfArray = new int[counter1];
+        int[] dateArray = new int[counter1];
+        String[] timeArray = new String[counter1];
+        double[] openArray = new double[counter1];
+        double[] highArray = new double[counter1];
+        double[] lowArray = new double[counter1];
+        double[] closeArray = new double[counter1];
+        int[] volumeArray = new int[counter1];
+
+        FinRes newArr = new FinRes();
+        boolean indicator = true;
+        int newIndex = 0;
+        for (int i = this.getDate().length - counter2; i < this.getDate().length - counter2 + counter1; i++) {
+            tickArray[newIndex] = this.getTicker()[i];
+            tfArray[newIndex] = this.getTimeframe()[i];
+            dateArray[newIndex] = this.getDate()[i];
+            timeArray[newIndex] = this.getTime()[i];
+            openArray[newIndex] = this.getOpen()[i];
+            highArray[newIndex] = this.getHigh()[i];
+            lowArray[newIndex] = this.getLow()[i];
+            closeArray[newIndex] = this.getClose()[i];
+            volumeArray[newIndex] = this.getVolume()[i];
+            if (this.getDate()[i] >= firstDate && indicator) {
                 newArr.startIndex = newIndex;
                 indicator = false;
             }
@@ -574,6 +638,131 @@ public class Working extends QuoteColArr {
         return this.comment;
     }
 
+    /**
+     * Определяет дни и время, когда нужно принудительно закрывать позицию.
+     * @param i Индекс элемента котировки.
+     * @return Если true то нужно закрыть позицию, false - не закрывать.
+     */
+    protected boolean isToClosePos(int i) {
+        if (Settings.TIME_LIMITS) {
+            int date = this.date[i];
+            int time = Integer.parseInt(this.time[i]);
+            int dayOfWeek = Dates.dayOfWeek(date);
+            int[] preHolidays = Settings.PRE_HOLIDAYS;
+            int[] preJointDays = Settings.PRE_JOINT_DAYS;
+            if ((this.ticker[i].contains("BR") || this.ticker[i].contains("NG"))) {
+                preJointDays = Settings.PRE_JOINT_BR_DAYS; // Массив дат перед склейкой фьючерсов по тикерам BR и NG
+            }
+            boolean isPreHolidays = false;
+            boolean isPreJointDay = false;
+            for (int day : preHolidays) {
+                if (day == date) {
+                    isPreHolidays = true;
+                    break;
+                }
+            }
+            for (int day : preJointDays) {
+                if (day == date) {
+                    isPreJointDay = true;
+                    break;
+                }
+            }
+            boolean isClosePosition = false;
+            if (dayOfWeek == 5 && time >= Settings.FINISH_TIME_FRIDAY) {
+                isClosePosition = true;
+            } else if (isPreHolidays || isPreJointDay && time >= Settings.FINISH_TIME_FRIDAY) {
+                isClosePosition = true;
+            }
+            return isClosePosition;
+        } else {
+            return false;
+        }
+
+
+
+    }
+
+    /**
+     * Определеяет дни и время, когда нельзя открывать позицию.
+     * @param i Индекс элемента котировки.
+     * @return Если false то нельзя открывать позицию, true - можно.
+     */
+    protected boolean isToNotOpenPos(int i) {
+        if (Settings.TIME_LIMITS) {
+            int date = this.date[i];
+            int time = Integer.parseInt(this.time[i]);
+            int dayOfWeek = Dates.dayOfWeek(date);
+            int[] preHolidays = Settings.PRE_HOLIDAYS; // Массив дат перед праздниками
+            int[] preJointDays = Settings.PRE_JOINT_DAYS; // Массив дат перед склейкой фьючерсов
+            int[] afterJointDays = Settings.AFTER_JOINT_DAYS; // Массив торговых дней идущих сразу после склейки фьючерса
+            if ((this.ticker[i].contains("BR") || this.ticker[i].contains("NG"))) {
+                preJointDays = Settings.PRE_JOINT_BR_DAYS; // Массив дат перед склейкой фьючерсов по тикерам BR и NG
+                afterJointDays = Settings.AFTER_JOINT_BR_DAYS; // Массив торговых дней идущих сразу после склейки фьючерсов BR и NG.
+            }
+            int[] afterHolidaysDays = Settings.AFTER_HOLIDAYS_DAYS; // Массив торговых дней идущих сразу после праздников.
+            boolean isPreHolidays = false;
+            boolean isPreJointDay = false;
+//        boolean isPreJointBrDay = false;
+            boolean isAfterJointDay = false;
+//        boolean isAfterJointBrDay = false;
+            boolean isAfterHolidaystDay = false;
+            for (int day : preHolidays) {
+                if (day == date) {
+                    isPreHolidays = true;
+                    break;
+                }
+            }
+            for (int day : preJointDays) {
+                if (day == date) {
+                    isPreJointDay = true;
+                    break;
+                }
+            }
+            for (int day : afterJointDays) {
+                if (day == date) {
+                    isAfterJointDay = true;
+                    break;
+                }
+            }
+            for (int day : afterHolidaysDays) {
+                if (day == date) {
+                    isAfterHolidaystDay = true;
+                    break;
+                }
+            }
+            boolean isToNotOpenPos = false;
+            if (time <= Settings.START_EVERYDAY) {
+                isToNotOpenPos = true;
+            } else if (dayOfWeek == 5 && time >= Settings.FINISH_TIME_FRIDAY) {
+                isToNotOpenPos = true;
+            } else if (isPreHolidays || isPreJointDay && time >= Settings.FINISH_TIME_FRIDAY) {
+                isToNotOpenPos = true;
+            } else if (isAfterJointDay && time <= Settings.AFTER_JOINT_START) {
+                isToNotOpenPos = true;
+            } else if (isAfterHolidaystDay && time <= Settings.START_TIME_MONDAY) {
+                isToNotOpenPos = true;
+            } else if (dayOfWeek == 1 && time <= Settings.START_TIME_MONDAY) {
+                isToNotOpenPos = true;
+            }
+            return !isToNotOpenPos;
+
+        }
+        return true;
+    }
+
+    /**
+     * Определяет время, когда нельзя закрывать позицию
+     * @param i Индекс элемента котировки.
+     * @return Если false то нельзя закрывать позицию, true - можно.
+     */
+    protected boolean isNotToClosePos(int i) {
+        if (Settings.TIME_LIMITS) {
+            int time = Integer.parseInt(this.time[i]);
+            return time > Settings.START_EVERYDAY;
+        }
+        return true;
+    }
+
     // С  ЭТОГО МЕСТА НАЧИНАЮТСЯ МЕТОДЫ ТОРГОВЫХ АЛГОРИТМОВ.
 
     /**
@@ -633,91 +822,83 @@ public class Working extends QuoteColArr {
         for (int i = startIndex + 2; i < this.close.length; i++) {
             boolean le = (this.close[i - 1] > this.ind1[i - 2]) && this.ind1[i - 2] != 0.0;// сигнал входа в лонг
             boolean se = (this.close[i - 1] < this.ind2[i - 2]) && this.ind2[i - 2] != 0.0; // сигнал входа в шорт
-            boolean lxt = this.open[i] >= takeProf; // сигнал выхода из лонга по тейк-профиту
-            boolean lxs = this.open[i] <= stopLoss; // сигнал выхода из лонга по стоп-лоссу (то же самое)
-            boolean sxt = this.open[i] <= takeProf; // сигнал выхода из шорта по тейк-профиту
-            boolean sxs = this.open[i] >= stopLoss; // сигнал выхода из шорта по стоп-лоссу (то же самое)
+            boolean lxt = this.high[i] >= takeProf; // сигнал выхода из лонга по тейк-профиту
+            boolean lxs = this.low[i] <= stopLoss; // сигнал выхода из лонга по стоп-лоссу (то же самое)
+            boolean sxt = this.low[i] <= takeProf; // сигнал выхода из шорта по тейк-профиту
+            boolean sxs = this.high[i] >= stopLoss; // сигнал выхода из шорта по стоп-лоссу (то же самое)
+            boolean cp = isToClosePos(i); // Если true, то закрываем позицию принудительно.
+            boolean nop = isToNotOpenPos(i); // Если false, то нельзя открывать позицию.
+            boolean ncp = isNotToClosePos(i); // Если false, то нельзя закрывать позицию.
             if (curPos == 0 && quPos == 0) {  // если нет позиции
-                if (le && this.ind1[i - 1] != 0.0) {  // сигнал открытия в лонг
-                    curPos = 1;
-                    pos[i] = curPos;
+                if ((le && this.ind1[i - 1] != 0.0 && nop) || (se && this.ind2[i - 1] != 0.0  && nop)) {
                     quPos += quLots;
-                    quan[i] = quPos;
-                    stopLoss = this.open[i] * ((100 - stopLim) / 100);
-                    takeProf = this.open[i] * ((100 + stopLim * mult) / 100);
                     opCl = this.open[i];
                     price[i] = opCl;
-                    stopLossArr[i] = stopLoss;
-                    signal[i] = "le";
-                } else if (se && this.ind2[i - 1] != 0.0) { // сигнал открытия в шорт
-                    curPos = -1;
-                    pos[i] = curPos;
-                    quPos += quLots;
-                    quan[i] = quPos;
-                    stopLoss = this.open[i] * ((100 + stopLim) / 100);
-                    takeProf = this.open[i] * ((100 - stopLim * mult) / 100);
-                    opCl = this.open[i];
-                    price[i] = opCl;
-                    stopLossArr[i] = stopLoss;
-                    signal[i] = "se";
-                } else { //  во всех остальных случаях
-                    pos[i] = curPos;
-                    quan[i] = quPos;
-                    stopLossArr[i] = stopLoss;
+                    if (le && this.ind1[i - 1] != 0.0) {  // сигнал открытия в лонг
+                        curPos = 1;
+                        stopLoss = opCl * ((100 - stopLim) / 100);
+                        takeProf = opCl * ((100 + stopLim * mult) / 100);
+                        signal[i] = "le";
+                    } else if (se && this.ind2[i - 1] != 0.0) {
+                        curPos = -1;
+                        stopLoss = opCl * ((100 + stopLim) / 100);
+                        takeProf = opCl * ((100 - stopLim * mult) / 100);
+                        signal[i] = "se";
+                    }
+                } else {
+                    price[i] = 0;
                     signal[i] = "0";
                 }
+                pos[i] = curPos;
+                quan[i] = quPos;
+                stopLossArr[i] = stopLoss;
+
             } else if (curPos == 1) { // если есть лонговая позиция
-                if (lxt) {
+                stopLossArr[i] = stopLoss;
+                if ((lxt && ncp) || (lxs && ncp) || cp) {
                     curPos = 0;
                     pos[i] = curPos;
                     quPos -= quLots;
                     quan[i] = quPos;
-                    price[i] = takeProf;
+                    if (lxt && ncp) {
+                        price[i] = takeProf;
+                        signal[i] = "lxt";
+                    } else if (lxs && ncp) {
+                        price[i] = stopLoss;
+                        signal[i] = "lxs";
+                    } else if (cp) {
+                        price[i] = this.open[i];
+                        signal[i] = "cp";
+                    }
                     stopLoss = -1;
                     takeProf = -1;
-                    stopLossArr[i] = stopLoss;
-                    signal[i] = "lxt";
-                } else if (lxs) {
-                    curPos = 0;
-                    pos[i] = curPos;
-                    quPos -= quLots;
-                    quan[i] = quPos;
-                    price[i] = stopLoss;
-                    stopLoss = -1;
-                    takeProf = -1;
-                    stopLossArr[i] = stopLoss;
-                    signal[i] = "lxs";
                 } else {
                     pos[i] = curPos;
                     quan[i] = quPos;
-                    stopLossArr[i] = stopLoss;
                     signal[i] = "0";
                 }
             } else if (curPos == -1) { // если есть шортовая позиция
-                if (sxt) {
+                stopLossArr[i] = stopLoss;
+                if ((sxt && ncp) || (sxs && ncp) || cp) {
                     curPos = 0;
                     pos[i] = curPos;
                     quPos -= quLots;
                     quan[i] = quPos;
-                    price[i] = takeProf;
+                    if(sxt && ncp) {
+                        price[i] = takeProf;
+                        signal[i] = "sxt";
+                    } else if (sxs && ncp) {
+                        price[i] = stopLoss;
+                        signal[i] = "sxs";
+                    } else if (cp) {
+                        price[i] = this.open[i];
+                        signal[i] = "cp";
+                    }
                     stopLoss = -1;
                     takeProf = -1;
-                    stopLossArr[i] = stopLoss;
-                    signal[i] = "sxt";
-                } else if (sxs) {
-                    curPos = 0;
-                    pos[i] = curPos;
-                    quPos -= quLots;
-                    quan[i] = quPos;
-                    price[i] = stopLoss;
-                    stopLoss = -1;
-                    takeProf = -1;
-                    stopLossArr[i] = stopLoss;
-                    signal[i] = "sxs";
                 } else {
                     pos[i] = curPos;
                     quan[i] = quPos;
-                    stopLossArr[i] = stopLoss;
                     signal[i] = "0";
                 }
             }
@@ -790,8 +971,11 @@ public class Working extends QuoteColArr {
             boolean lxs = this.open[i] <= stopLoss; // сигнал выхода из лонга по стоп-лоссу (то же самое)
             boolean sxt = this.open[i] <= takeProf; // сигнал выхода из шорта по тейк-профиту
             boolean sxs = this.open[i] >= stopLoss; // сигнал выхода из шорта по стоп-лоссу (то же самое)
+            boolean cp = isToClosePos(i); // Если true, то закрываем позицию принудительно.
+            boolean nop = isToNotOpenPos(i); // Если false, то нельзя открывать позицию.
+            boolean ncp = isNotToClosePos(i); // Если false, то нельзя закрывать позицию.
             if (curPos == 0 && quPos == 0) {  // если нет позиции
-                if (le) {  // сигнал открытия в лонг
+                if (le && nop) {  // сигнал открытия в лонг
                     curPos = 1;
                     pos[i] = curPos;
                     quPos += quLots;
@@ -802,7 +986,7 @@ public class Working extends QuoteColArr {
                     price[i] = opCl;
                     stopLossArr[i] = stopLoss;
                     signal[i] = "le";
-                } else if (se) { // сигнал открытия в шорт
+                } else if (se && nop) { // сигнал открытия в шорт
                     curPos = -1;
                     pos[i] = curPos;
                     quPos += quLots;
@@ -820,7 +1004,7 @@ public class Working extends QuoteColArr {
                     signal[i] = "0";
                 }
             } else if (curPos == 1) { // если есть лонговая позиция
-                if (lxt) {
+                if (lxt && ncp) {
                     curPos = 0;
                     pos[i] = curPos;
                     quPos -= quLots;
@@ -830,7 +1014,7 @@ public class Working extends QuoteColArr {
                     takeProf = -1;
                     stopLossArr[i] = stopLoss;
                     signal[i] = "lxt";
-                } else if (lxs) {
+                } else if (lxs && ncp) {
                     curPos = 0;
                     pos[i] = curPos;
                     quPos -= quLots;
@@ -840,6 +1024,16 @@ public class Working extends QuoteColArr {
                     takeProf = -1;
                     stopLossArr[i] = stopLoss;
                     signal[i] = "lxs";
+                } else if (cp) {
+                    curPos = 0;
+                    pos[i] = curPos;
+                    quPos -= quLots;
+                    quan[i] = quPos;
+                    price[i] = stopLoss;
+                    stopLoss = -1;
+                    takeProf = -1;
+                    stopLossArr[i] = stopLoss;
+                    signal[i] = "cp";
                 } else {
                     pos[i] = curPos;
                     quan[i] = quPos;
@@ -847,7 +1041,7 @@ public class Working extends QuoteColArr {
                     signal[i] = "0";
                 }
             } else if (curPos == -1) { // если есть шортовая позиция
-                if (sxt) {
+                if (sxt && ncp) {
                     curPos = 0;
                     pos[i] = curPos;
                     quPos -= quLots;
@@ -857,7 +1051,7 @@ public class Working extends QuoteColArr {
                     takeProf = -1;
                     stopLossArr[i] = stopLoss;
                     signal[i] = "sxt";
-                } else if (sxs) {
+                } else if (sxs && ncp) {
                     curPos = 0;
                     pos[i] = curPos;
                     quPos -= quLots;
@@ -867,6 +1061,16 @@ public class Working extends QuoteColArr {
                     takeProf = -1;
                     stopLossArr[i] = stopLoss;
                     signal[i] = "sxs";
+                } else if (cp) {
+                    curPos = 0;
+                    pos[i] = curPos;
+                    quPos -= quLots;
+                    quan[i] = quPos;
+                    price[i] = stopLoss;
+                    stopLoss = -1;
+                    takeProf = -1;
+                    stopLossArr[i] = stopLoss;
+                    signal[i] = "cp";
                 } else {
                     pos[i] = curPos;
                     quan[i] = quPos;
@@ -886,8 +1090,174 @@ public class Working extends QuoteColArr {
         this.signal = signal;
     }
 
+    /**
+     * Торговый алгоритм основанный на пробое и закреплении над или под ассиметричным каналом Дончиана,
+     * с трейл-стоп-лоссом и тейк-профитом. Закрепление происходит на 1 свече по закрытию.
+     *
+     * @param param Объект класса Parameter, содержащий параметры для работы данного торгового алгоритма:
+     *              1) Период верхней границы канала Дончиана
+     *              2) Период нижней границы канала Дончиана
+     *              3) Размер стол-лосса в процентах от цены открытия
+     *              4) Мультипликатор для расчёта цены тейк-профита от цены стоп-лосса
+     *              5) % на который должна вырасти позиция, чтобы активировать трэйл-стоп.
+     *              6) "Дистанция" на которой находится трэйл-стоп от текущей цены.
+     */
+    public void robDonchZakrepTrStop_v_0_1(Parameter param) {
+        /*
+        Назавания параметров:
+        1 - "MaxPeriod" - Период верхней границы канала Дончиана.
+        2 - "MinPeriod" - Период нижней границы канала Дончиана.
+        3 - "StopLoss" - Стоп-лосс в процентах от цены открытия.
+        4 - "Multiplier" - Мультипликатор для расчёта цены тейк-профита от размера стоп-лосса в процентах.
 
+        StringBuilder parName1 = new StringBuilder("MaxPeriod");
+        StringBuilder parName2 = new StringBuilder("MinPeriod");
+        StringBuilder parName3 = new StringBuilder("StopLoss");
+        StringBuilder parName4 = new StringBuilder("Multiplier");
 
+        double[][] steps = new double[][] {{10, 10, 0.3, 0.5}};
+        double[] parRange1 = new double[] {10, 150, steps[z][0]};
+	    double[] parRange2 = new double[] {10, 150, steps[z][1]};
+	    double[] parRange3 = new double[] {0.3, 1.5, steps[z][2]};
+	    double[] parRange4 = new double[] {1.5, 3.5, steps[z][3]};
+	    ParRange param = new ParRange();
+	    param.setParRange(parRange1, parRange2, parRange3, parRange4, parName1, parName2, parName3, parName4);
+         */
+        this.comment = "Алгоритм основанный на пробое и закреплении ассиметричного канала Дончиана";
+        this.parameters = new double[]{param.par1, param.par2, param.par3, param.par4};
+        int[] pos = new int[this.getClose().length];
+        int[] quan = new int[this.getClose().length];
+        double[] price = new double[this.getClose().length];
+        double[] stopLossArr = new double[this.getClose().length];
+        String[] signal = new String[this.getClose().length];
+        this.paramNames = new StringBuilder[]{param.parName1, param.parName2, param.parName3, param.parName4};
+        this.ind1 = Indicators.max(this.high, (int) param.par1); // Верхняя граница канала Дончиана
+        this.ind2 = Indicators.min(this.low, (int) param.par2); // Нижняя граница канала Дончиана
+        double stopLim = param.par3; // уровень стопа в процентах от цены открытия
+        double mult = param.par4; // отношение уровня тэйка к с уровню стопа (раз)
+        int curPos = 0;  // наличие или отсутсвие позиции, записывается в [9] 0 или 1
+        int quPos = 0;  // количество лотов в открытой позиции, только положительное целое число
+        int iInp = 0;  // индекс строки входа в позицию
+        int quLots = 1;  // фиксированное количество лотов, которым торгуем в одной сделке
+        double stopLoss = -1; // Уровень стоп-лосса
+        double takeProf = -1; // Уровень тейк-профита
+        double trStopLossShift = 0.5; // Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу)
+        double opCl = 0;  // котировка открытия / закрытия позиции
+        boolean activeTrailStopLong = false; //  переменная условие - активен ли трэйл для лонга стоп False - нет, True - да
+        boolean activeTrailStopShort = false; //  переменная условие - активен ли трэйл для шорта стоп False - нет, True - да
+        double trailStopStart = 0.6; // процент на который должна вырасти позиция, чтобы активировать трейл-стоп
+        for (int i = startIndex + 2; i < this.close.length; i++) {
+            boolean le = (this.close[i - 1] > this.ind1[i - 2]) && this.ind1[i - 2] != 0.0;// сигнал входа в лонг
+            boolean se = (this.close[i - 1] < this.ind2[i - 2]) && this.ind2[i - 2] != 0.0; // сигнал входа в шорт
+            boolean lxt = this.high[i] >= takeProf; // сигнал выхода из лонга по тейк-профиту
+            boolean lxs = this.low[i] <= stopLoss; // сигнал выхода из лонга по стоп-лоссу (то же самое)
+            boolean sxt = this.low[i] <= takeProf; // сигнал выхода из шорта по тейк-профиту
+            boolean sxs = this.high[i] >= stopLoss; // сигнал выхода из шорта по стоп-лоссу (то же самое)
+            boolean cp = isToClosePos(i); // Если true, то закрываем позицию принудительно.
+            boolean nop = isToNotOpenPos(i); // Если false, то нельзя открывать позицию.
+            boolean ncp = isNotToClosePos(i); // Если false, то нельзя закрывать позицию.
+            if (curPos == 0 && quPos == 0) {  // если нет позиции
+                if ((le && this.ind1[i - 1] != 0.0 && nop) || (se && this.ind2[i - 1] != 0.0  && nop)) {
+                    quPos += quLots;
+                    opCl = this.open[i];
+                    price[i] = opCl;
+                    if (le && this.ind1[i - 1] != 0.0) {  // сигнал открытия в лонг
+                        curPos = 1;
+                        stopLoss = opCl * ((100 - stopLim) / 100);
+                        takeProf = opCl * ((100 + stopLim * mult) / 100);
+                        signal[i] = "le";
+                    } else if (se && this.ind2[i - 1] != 0.0) {
+                        curPos = -1;
+                        stopLoss = opCl * ((100 + stopLim) / 100);
+                        takeProf = opCl * ((100 - stopLim * mult) / 100);
+                        signal[i] = "se";
+                    }
+                } else {
+                    price[i] = 0;
+                    signal[i] = "0";
+                }
+                pos[i] = curPos;
+                quan[i] = quPos;
+                stopLossArr[i] = stopLoss;
+
+            } else if (curPos == 1) { // если есть лонговая позиция
+                stopLossArr[i] = stopLoss;
+                if ((lxt && ncp) || (lxs && ncp) || cp) {
+                    curPos = 0;
+                    pos[i] = curPos;
+                    quPos -= quLots;
+                    quan[i] = quPos;
+                    if (lxt && ncp) {
+                        price[i] = takeProf;
+                        signal[i] = "lxt";
+                    } else if (lxs && ncp) {
+                        price[i] = stopLoss;
+                        signal[i] = "lxs";
+                    } else if (cp) {
+                        price[i] = this.open[i];
+                        signal[i] = "cp";
+                    }
+                    stopLoss = -1;
+                    takeProf = -1;
+                    activeTrailStopLong = false;
+                } else {
+                    pos[i] = curPos;
+                    quan[i] = quPos;
+                    signal[i] = "0";
+                    if (activeTrailStopLong) { // Если трэйл-стоп в лонг активен, то...
+                        if (this.high[i] * ((100 - trStopLossShift) / 100) > stopLoss ) {
+                            stopLoss = this.high[i] * ((100 - trStopLossShift) / 100);
+                        }
+                    } else if (this.high[i] >= opCl * ((100 + trailStopStart) / 100)) { // Иначе если трэйл-стоп в лонг не активен
+                        activeTrailStopLong = true; // Активируем трэйл-стоп в лонг
+                        stopLoss = this.high[i] * ((100 - trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                    }
+                }
+            } else if (curPos == -1) { // если есть шортовая позиция
+                stopLossArr[i] = stopLoss;
+                if ((sxt && ncp) || (sxs && ncp) || cp) {
+                    curPos = 0;
+                    pos[i] = curPos;
+                    quPos -= quLots;
+                    quan[i] = quPos;
+                    if(sxt && ncp) {
+                        price[i] = takeProf;
+                        signal[i] = "sxt";
+                    } else if (sxs && ncp) {
+                        price[i] = stopLoss;
+                        signal[i] = "sxs";
+                    } else if (cp) {
+                        price[i] = this.open[i];
+                        signal[i] = "cp";
+                    }
+                    stopLoss = -1;
+                    takeProf = -1;
+                    activeTrailStopShort = false;
+                } else {
+                    pos[i] = curPos;
+                    quan[i] = quPos;
+                    signal[i] = "0";
+                    if (activeTrailStopShort) { // Если трэйл-стоп в шорт активен, то...
+                        if (this.low[i] * ((100 + trStopLossShift) / 100) < stopLoss) {
+                            stopLoss = this.low[i] * ((100 + trStopLossShift) / 100);
+                        }
+                    } else if (this.low[i] <= opCl * ((100 - trailStopStart) / 100)) { // Иначе если трэйл-стоп в шорт не активен
+                        activeTrailStopShort = true; // Активируем трэйл-стоп в шорт
+                        stopLoss = this.low[i] * ((100 + trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                    }
+                }
+            }
+        }
+        this.pos = pos;
+        this.quan = quan;
+        this.price = price;
+        this.stopLoss = stopLossArr;
+        this.ind3 = new double[getClose().length];
+        Arrays.fill(this.ind3, stopLim);
+        this.ind4 = new double[getClose().length];
+        Arrays.fill(this.ind4, mult);
+        this.signal = signal;
+    }
 }
 
 

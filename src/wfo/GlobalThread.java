@@ -56,14 +56,14 @@ public class GlobalThread extends Thread {
         sample.wfoTestGlobal(ticker, timeFrame, this.paramRange, quWeeks, learnWeeksArr, testWeeks, comission, gSecurity, unitPrice, pathToFolderIn);
         if (GlobalTest.globList != null) {
             GlobalTest.globList.add(sample);
-            if (GlobalTest.WFO_TO_FILE) {
+            if (Settings.WFO_TO_FILE) {
                 sample.simpleWFOToFile(this.pathToFolderOut);
             }
         } else {
             List<WFOTester> a = new ArrayList<>();
             a.add(sample);
             GlobalTest.setNewWfoList(a);
-            if (GlobalTest.WFO_TO_FILE) {
+            if (Settings.WFO_TO_FILE) {
                 sample.simpleWFOToFile(this.pathToFolderOut);
             }
         }
