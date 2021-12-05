@@ -5,36 +5,36 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class ProjectTest {
-	public static void robFunc (FinRes a, Parameter param) {
-		a.rob_donch_zakrep_v_0_1(param);
-	}
-	
-	
-	public static void main(String[] args) throws IOException {
-		FinRes a = new FinRes();
-		Parameter b = new Parameter();
-//		a.setQuote("C:\\Users\\SMIRNOV_AV\\Desktop\\PY\\FINAM_TXT\\5Eu.txt");
-		a.setQuote("J:\\ROB\\TEST_FINAM\\5Eu.txt");
-		int quWeeks = 2;
-//		int weekNum = 1;
-//		int learnWeeks = 4;
-//		int testWeeks = 1;
-		a.workArr(quWeeks);
-		b.parName1 = new StringBuilder("Max_Of_Period");
-		b.parName2 = new StringBuilder("Min_Of_Period");
-		b.parName3 = new StringBuilder("Stop_Loss");
-		b.parName4 = new StringBuilder("Multiplier");
-		b.par1 = 150;
-		b.par2 = 150;
-		b.par3 = 0.5;
-		b.par4 = 2.5;
-		//StringBuilder[] namesOfParameters = new StringBuilder[] {parName1, parName2, parName3, parName4};
-		a.setCom(4);
-		a.rob_donch_zakrep_v_0_1(b);
-		a.robToFile("C:\\Users\\SMIRNOV_AV\\Desktop\\PY\\TEST_FINAM\\testfile2.csv");
-		a.counter();
-		a.finResToFile("C:\\Users\\SMIRNOV_AV\\Desktop\\PY\\TEST_FINAM\\testfile3.csv");
-		System.out.println("Done!");
+//	public static void robFunc (FinRes a, Parameter param) {
+//		a.robBbandsZakpepSimTrStop_v_0_1(param);
+//	}
+//
+//
+//	public static void main(String[] args) throws IOException {
+//		FinRes a = new FinRes();
+//		Parameter b = new Parameter();
+////		a.setQuote("C:\\Users\\SMIRNOV_AV\\Desktop\\PY\\FINAM_TXT\\5Eu.txt");
+//		a.setQuote("J:\\ROB\\TEST_FINAM\\5Eu.txt");
+//		int quWeeks = 2;
+////		int weekNum = 1;
+////		int learnWeeks = 4;
+////		int testWeeks = 1;
+//		a.workArr(quWeeks);
+//		b.parName1 = new StringBuilder("Period");
+//		b.parName2 = new StringBuilder("StandDeviation");
+//		b.parName3 = new StringBuilder("Stop_Loss");
+//		b.parName4 = new StringBuilder("Multiplier");
+//		b.par1 = 150;
+//		b.par2 = 2;
+//		b.par3 = 0.5;
+//		b.par4 = 2.5;
+//		//StringBuilder[] namesOfParameters = new StringBuilder[] {parName1, parName2, parName3, parName4};
+//		a.setCom(4);
+//		a.robBbandsZakpepSimTrStop_v_0_1(b);
+//		a.robToFile("C:\\Users\\SMIRNOV_AV\\Desktop\\PY\\TEST_FINAM\\testfile2.csv");
+//		a.counter();
+//		a.finResToFile("C:\\Users\\SMIRNOV_AV\\Desktop\\PY\\TEST_FINAM\\testfile3.csv");
+//		System.out.println("Done!");
 //		//a.quoteOut();
 //		//Working b = a.getLearnArr(quWeeks, weekNum, learnWeeks);
 //		Working c = a.getTestArr(quWeeks, weekNum, testWeeks);
@@ -60,10 +60,5 @@ public class ProjectTest {
 //		for (double i : rsi) {
 //			System.out.println(i);
 //		}
-		
-		
-		
-		
-	}
-
+//	}
 }

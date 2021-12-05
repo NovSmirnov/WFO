@@ -4,14 +4,12 @@ import java.io.IOException;
 
 public class AlgoTest {
     public static void main(String[] args) throws IOException {
-        StringBuilder parName1 = new StringBuilder("MaxPeriod");
-        StringBuilder parName2 = new StringBuilder("MinPeriod");
-        StringBuilder parName3 = new StringBuilder("StopLoss");
-        StringBuilder parName4 = new StringBuilder("Multiplier");
-        double par1 = 100;
-        double par2 = 100;
-        double par3 = 0.3;
-        double par4 = 2.5;
+        StringBuilder parName1 = new StringBuilder("Acceleration");
+        StringBuilder parName2 = new StringBuilder("StopLoss");
+        StringBuilder parName3 = new StringBuilder("Multiplier");
+        double par1 = 0.02;
+        double par2 = 0.3;
+        double par3 = 2.5;
 
 //        double par1 = 0.6; // Параметр 1
 //        double par2 = 2.5; // Параметр 2
@@ -30,7 +28,7 @@ public class AlgoTest {
         String finResFileOut = "C:\\Users\\SMIRNOV_AV\\Desktop\\PY\\TEST_FINAM\\robFinRes.csv";
 
         Parameter parameters = new Parameter();
-        parameters.setPar(par1, par2, par3, par4, parName1, parName2, parName3, parName4);
+        parameters.setPar(par1, par2, par3, parName1, parName2, parName3);
         FinRes a = new FinRes();
         a.setQuote(pathToFileIn);
         a.workArr(quWeeks + 5);

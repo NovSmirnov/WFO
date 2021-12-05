@@ -5,16 +5,19 @@ public class Settings {
     public final static int FILT_2_WEEKS = 30;
     public final static int FILT_4_WEEKS = 60;
 
-    public final static boolean WFO_TO_FILE = false;
-    public final static boolean TIME_LIMITS = true;
+    public final static boolean WFO_TO_FILE = false; // Записывать отдельные WFO тесты в файлы.
+    public final static boolean TIME_LIMITS = true; // Использовать ограничения по времени торговли.
+    public final static boolean TRAIL_STOP = true; // Использовать трейл стоп-лосс в моделях, где он допустим.
 
     public final static int QU_WEEKS = 72;
     public final static int[] LEARN_WEEKS_ARR = new int[] {1, 2, 4};
     public final static int TEST_WEEKS = 1;
 
-    static int emptyCores = 4; // количество ядер процессора, которое необходимо оставить свободными при работе программы
-    static int quCores = Runtime.getRuntime().availableProcessors(); // вычисление количества ядер (потоков) процессора
-    public static int quThreads = quCores - emptyCores;
+//    static int emptyCores = 2; // количество ядер процессора, которое необходимо оставить свободными при работе программы
+//    static int quCores = Runtime.getRuntime().availableProcessors(); // вычисление количества ядер (потоков) процессора
+//    public static int quThreads = quCores - emptyCores;
+
+    public static int quThreads = 8; // Разрешенное количество потоков
 
 
     public final static int START_TIME_MONDAY = 90000;

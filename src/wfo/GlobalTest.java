@@ -5,13 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Semaphore;
 
 public class GlobalTest {
     public static void robFunc(FinRes a, Parameter param) {
-        a.robDonchZakrepTrStop_v_0_1(param);
+        a.robBbandsZakpepSimTrStop_v_0_1(param);
     }  // !!! «¿œŒÀÕﬂ≈Ã
 
-    public final static String ROB_NAME = "robDonchZakrepTrStop_v_0_1"; // !!! «¿œŒÀÕﬂ≈Ã
+    public final static String ROB_NAME = "robBbandsZakpepSimTrStop_v_0_1"; // !!! «¿œŒÀÕﬂ≈Ã
 
     protected static List<WFOTester> globList;
     
@@ -57,42 +58,42 @@ public class GlobalTest {
         String pathToFolderIn = "J:\\ROB\\TEST_FINAM\\";
         String pathToFolderOut = "J:\\ROB\\JavaProject\\Tests\\";
 
-		StringBuilder parName1 = new StringBuilder("MaxPeriod");
-		StringBuilder parName2 = new StringBuilder("MinPeriod");
+		StringBuilder parName1 = new StringBuilder("Period");
+		StringBuilder parName2 = new StringBuilder("StandDeviation");
 		StringBuilder parName3 = new StringBuilder("StopLoss");
 		StringBuilder parName4 = new StringBuilder("Multiplier");
+		StringBuilder parName5 = new StringBuilder("trStopLossShift");
 
 //        double[][] steps = new double[][] {{5, 5, 0.3, 0.5}, {10, 10, 0.3, 0.5}, {20, 20, 0.3, 0.5}};
-		double[][] steps = new double[][] {{10, 10, 0.3, 0.5}};
+		double[][] steps = new double[][] {{10, 0.5, 0.3, 0.5, 0.3}};
+		int quTreads = tickers.length * timeFrames.length * steps.length;
+		GlobalThread[] threads = new GlobalThread[quTreads];
+		int threadIndex = 0;
 
     	for(int z = 0; z < steps.length; z++) {
 			System.out.println(steps[z][0]);
 			double[] parRange1 = new double[] {10, 150, steps[z][0]};
-			double[] parRange2 = new double[] {10, 150, steps[z][1]};
+			double[] parRange2 = new double[] {1, 2.5, steps[z][1]};
 			double[] parRange3 = new double[] {0.3, 1.5, steps[z][2]};
 			double[] parRange4 = new double[] {1.5, 3.5, steps[z][3]};
+			double[] parRange5 = new double[] {0.3, 0.9, steps[z][4]};
 			ParRange param = new ParRange();
-			param.setParRange(parRange1, parRange2, parRange3, parRange4, parName1, parName2, parName3, parName4);
+			param.setParRange(parRange1, parRange2, parRange3, parRange4, parRange5, parName1, parName2, parName3, parName4, parName5);
+			Semaphore sem = new Semaphore(Settings.quThreads);
 	    	for (int i = 0; i < timeFrames.length; i++) {
-				for (int j = 0; j < tickers.length; j = j + Settings.quThreads) {
-					GlobalThread[] trArray = new GlobalThread[Settings.quThreads];
-					for (int k = 0; k < Settings.quThreads; k++) {
-						if (j + k < tickers.length) {
-							System.out.println("Timeframe = " + timeFrames[i] + " " + "Ticker = " + tickers[j + k][0]);
-							GlobalThread myThread = new GlobalThread(tickers[j + k], timeFrames[i], param,
-									Settings.QU_WEEKS, Settings.LEARN_WEEKS_ARR, Settings.TEST_WEEKS, pathToFolderIn, pathToFolderOut);
-							trArray[k] = myThread;
-							myThread.start();
-						}
-					}
-					for (int k = 0; k < Settings.quThreads; k++) {
-						if (trArray[k] != null) {
-							trArray[k].join();
-						}
-				    }
+				for (int j = 0; j < tickers.length; j++) {
+//					System.out.println("Timeframe = " + timeFrames[i] + " " + "Ticker = " + tickers[j][0]);
+					GlobalThread myThread = new GlobalThread(tickers[j], timeFrames[i], param,
+							Settings.QU_WEEKS, Settings.LEARN_WEEKS_ARR, Settings.TEST_WEEKS, pathToFolderIn, pathToFolderOut, sem);
+					myThread.start();
+					threads[threadIndex] = myThread;
+					threadIndex++;
 				}
 			}
     	}
+		for (GlobalThread thread : threads) {
+			thread.join();
+		}
     	WFOTester[] finalList = globList.toArray(new WFOTester[globList.size()]);
     	Analizer summary = new Analizer();
     	summary.setData(finalList);
