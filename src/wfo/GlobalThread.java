@@ -3,6 +3,7 @@ package wfo;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Semaphore;
 
 public class GlobalThread extends Thread {
 
@@ -15,12 +16,15 @@ public class GlobalThread extends Thread {
     private String pathToFolderIn;
     private String pathToFolderOut;
 
+    private Semaphore sem;
+
     private double gSecurity;
     private double unitPrice;
+    private boolean done = false;
 
 
     public GlobalThread(String[] ticker, int timeFrame, ParRange paramRange,
-                        int quWeeks, int[] learnWeeksArr, int testWeeks, String pathToFolderIn, String pathToFolderOut) {
+                        int quWeeks, int[] learnWeeksArr, int testWeeks, String pathToFolderIn, String pathToFolderOut, Semaphore sem) {
         this.ticker = ticker;
         this.timeFrame = timeFrame;
         this.paramRange = paramRange;
@@ -29,21 +33,30 @@ public class GlobalThread extends Thread {
         this.testWeeks = testWeeks;
         this.pathToFolderIn = pathToFolderIn;
         this.pathToFolderOut = pathToFolderOut;
+        this.sem = sem;
     }
 
     @Override
     public void run() {
         try {
-            this.runThread();
-        } catch (IOException e) {
+            if (!this.done) {
+                sem.acquire();
+                this.runThread();
+                this.done = true;
+                sem.release();
+            }
+
+        } catch (IOException | InterruptedException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
     }
 
     public void runThread() throws IOException {
+        long start = System.currentTimeMillis();
         int timeFrame = this.timeFrame;
         String ticker = this.ticker[0];
+        System.out.println("Timeframe = " + timeFrame + " : Ticker = " + ticker);
         double comission = Double.parseDouble(this.ticker[1]);
         int quWeeks = this.quWeeks;
         int[] learnWeeksArr = this.learnWeeksArr;
@@ -56,17 +69,21 @@ public class GlobalThread extends Thread {
         sample.wfoTestGlobal(ticker, timeFrame, this.paramRange, quWeeks, learnWeeksArr, testWeeks, comission, gSecurity, unitPrice, pathToFolderIn);
         if (GlobalTest.globList != null) {
             GlobalTest.globList.add(sample);
-            if (GlobalTest.WFO_TO_FILE) {
+            if (Settings.WFO_TO_FILE) {
                 sample.simpleWFOToFile(this.pathToFolderOut);
             }
         } else {
             List<WFOTester> a = new ArrayList<>();
             a.add(sample);
             GlobalTest.setNewWfoList(a);
-            if (GlobalTest.WFO_TO_FILE) {
+            if (Settings.WFO_TO_FILE) {
                 sample.simpleWFOToFile(this.pathToFolderOut);
             }
         }
-        System.out.println("done!");
+        this.done = true;
+
+        long finish = System.currentTimeMillis();
+        double elapsed = (finish - start) / 1000;
+        System.out.println("Done! " + ticker + " : " + timeFrame + " Затраченно: " + elapsed + " сек");
     }
 }
