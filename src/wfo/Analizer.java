@@ -439,7 +439,7 @@ public class Analizer {
                 ";" + "Стратегия переобучения" + ";" + "Доходность в единицах котировки" + ";" + "Доходность в рублях" +
                 ";" + "Доходность к ГО в % " + ";" + "Доходность к средней цене в %" + ";" + "Корректирующий коэфициент" +
                 ";" + "Интегрированный показатель" + ";" + "Дата старта" + ";" + "Дата окончания" +
-                ";" + "Комментарий" + ";" + parHeader + "\n";
+                ";" + "Комментарий" + parHeader + "\n";
         String line = new String("");
         FileWriter writer = new FileWriter(pathToFile, Charset.forName("cp1251"));
         writer.write(headLine.toString());
@@ -455,7 +455,7 @@ public class Analizer {
             line = this.robNames[sortByIntegrated[i]] + ";" + this.tickers[sortByIntegrated[i]] + ";" + this.timeFrames[sortByIntegrated[i]] + ";" +
                     this.strateges[sortByIntegrated[i]] + ";" + df.format(this.profits[sortByIntegrated[i]]) + ";" + df.format(this.rubProfits[sortByIntegrated[i]]) + ";" + df.format(this.goProfits[sortByIntegrated[i]]) + ";" +
                     df.format(this.avProfits[sortByIntegrated[i]]) + ";" + df.format(this.deviations[sortByIntegrated[i]]) + ";" + df.format(this.integratedInd[sortByIntegrated[i]]) + ";" + this.startDates[sortByIntegrated[i]] +
-                    ";" + this.finishDates[sortByIntegrated[i]] + ";" + this.comments[sortByIntegrated[i]] + ";" + parameters + "\n";
+                    ";" + this.finishDates[sortByIntegrated[i]] + ";" + this.comments[sortByIntegrated[i]] + parameters + "\n";
             writer.write(line.toString());
 
         }

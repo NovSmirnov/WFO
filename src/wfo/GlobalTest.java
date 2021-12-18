@@ -9,10 +9,10 @@ import java.util.concurrent.Semaphore;
 
 public class GlobalTest {
     public static void robFunc(FinRes a, Parameter param) {
-        a.robBbandsZakpepSimTrStop_v_0_1(param);
+        a.robPrChEmaSimTrStop_v_0_1(param);
     }  // !!! «¿œŒÀÕﬂ≈Ã
 
-    public final static String ROB_NAME = "robBbandsZakpepSimTrStop_v_0_1"; // !!! «¿œŒÀÕﬂ≈Ã
+    public final static String ROB_NAME = "robPrChEmaSimTrStop_v_0_1"; // !!! «¿œŒÀÕﬂ≈Ã
 
     protected static List<WFOTester> globList;
     
@@ -51,7 +51,7 @@ public class GlobalTest {
 		    {"VTBR", "2", "756.6", "1"}, {"YNDF", "6", "8793.98", "1"}
     	};
 //		  int[] timeFrames = new int[] {2, 4, 5, 6, 10, 12, 15, 30};
-		int[] timeFrames = new int[] {2, 4, 5, 6, 10, 12};
+		int[] timeFrames = new int[] {2, 4, 5, 6, 10, 12, 15};
 
 //        String pathToFolderIn = "C:\\Users\\SMIRNOV_AV\\Desktop\\PY\\FINAM_TXT\\";
 //        String pathToFolderOut = "C:\\Users\\SMIRNOV_AV\\Desktop\\PY\\TESTS\\ROB_JAVA\\";
@@ -59,7 +59,7 @@ public class GlobalTest {
         String pathToFolderOut = "J:\\ROB\\JavaProject\\Tests\\";
 
 		StringBuilder parName1 = new StringBuilder("Period");
-		StringBuilder parName2 = new StringBuilder("StandDeviation");
+		StringBuilder parName2 = new StringBuilder("Channel");
 		StringBuilder parName3 = new StringBuilder("StopLoss");
 		StringBuilder parName4 = new StringBuilder("Multiplier");
 		StringBuilder parName5 = new StringBuilder("trStopLossShift");
@@ -72,8 +72,8 @@ public class GlobalTest {
 
     	for(int z = 0; z < steps.length; z++) {
 			System.out.println(steps[z][0]);
-			double[] parRange1 = new double[] {10, 150, steps[z][0]};
-			double[] parRange2 = new double[] {1, 2.5, steps[z][1]};
+			double[] parRange1 = new double[] {10, 200, steps[z][0]};
+			double[] parRange2 = new double[] {0.5, 2.5, steps[z][1]};
 			double[] parRange3 = new double[] {0.3, 1.5, steps[z][2]};
 			double[] parRange4 = new double[] {1.5, 3.5, steps[z][3]};
 			double[] parRange5 = new double[] {0.3, 0.9, steps[z][4]};

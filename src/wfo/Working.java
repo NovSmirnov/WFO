@@ -1625,28 +1625,39 @@ public class Working extends QuoteColArr {
         this.signal = signal;
     }
 
+
+    /**
+     * Простой алгоритм построеный на принципе пробития уровней осцилятора RSI . Пробитие уровня 30 в сторону центра - лонг,
+     * пробитие уровня 70 в сторону центра - шорт.
+     * @param param Объект класса Parameter, содержащий параметры для работы данного торгового алгоритма:
+     *              1) Период расчёта индикатора RSI
+     *              2) Стоп-лосс в процентах от цены открытия
+     *              3) Мультипликатор для расчёта цены тейк-профита от размера стоп-лосса в процентах.
+     *              4) Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу).
+     */
     public void robRsiTrStop_v_0_1(Parameter param) {
         /*
         Назавания параметров:
-        1 - "MaxPeriod" - Период верхней границы канала Дончиана.
-        2 - "MinPeriod" - Период нижней границы канала Дончиана.
-        3 - "StopLoss" - Стоп-лосс в процентах от цены открытия.
-        4 - "Multiplier" - Мультипликатор для расчёта цены тейк-профита от размера стоп-лосса в процентах.
+        1 - "Period" - Период расчёта индикатора RSI.
+        2 - "StopLoss" - Стоп-лосс в процентах от цены открытия.
+        3 - "Multiplier" - Мультипликатор для расчёта цены тейк-профита от размера стоп-лосса в процентах.
+        4 - "trStopLossShift" - Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу).
 
-        StringBuilder parName1 = new StringBuilder("MaxPeriod");
-        StringBuilder parName2 = new StringBuilder("MinPeriod");
-        StringBuilder parName3 = new StringBuilder("StopLoss");
-        StringBuilder parName4 = new StringBuilder("Multiplier");
+        StringBuilder parName1 = new StringBuilder("Period");
+        StringBuilder parName2 = new StringBuilder("StopLoss");
+        StringBuilder parName3 = new StringBuilder("Multiplier");
+        StringBuilder parName4 = new StringBuilder("trStopLossShift");
 
-        double[][] steps = new double[][] {{10, 10, 0.3, 0.5}};
+        double[][] steps = new double[][] {{10, 0.3, 0.5, 0.3}};
+
         double[] parRange1 = new double[] {10, 150, steps[z][0]};
-	    double[] parRange2 = new double[] {10, 150, steps[z][1]};
-	    double[] parRange3 = new double[] {0.3, 1.5, steps[z][2]};
-	    double[] parRange4 = new double[] {1.5, 3.5, steps[z][3]};
+	    double[] parRange2 = new double[] {0.3, 1.5, steps[z][1]};
+	    double[] parRange3 = new double[] {.5, 3.5, steps[z][2]};
+	    double[] parRange4 = new double[] {0.3, 0.9, steps[z][3]};
 	    ParRange param = new ParRange();
 	    param.setParRange(parRange1, parRange2, parRange3, parRange4, parName1, parName2, parName3, parName4);
          */
-        this.comment = "Алгоритм основанный на пробое и закреплении ассиметричного канала Дончиана";
+        this.comment = "Алгоритм основанный на пропробое уровней 30 и 70 по RSI в сторону центра";
         this.parameters = new double[]{param.par1, param.par2, param.par3, param.par4};
         int[] pos = new int[this.getClose().length];
         int[] quan = new int[this.getClose().length];
@@ -1654,8 +1665,189 @@ public class Working extends QuoteColArr {
         double[] stopLossArr = new double[this.getClose().length];
         String[] signal = new String[this.getClose().length];
         this.paramNames = new StringBuilder[]{param.parName1, param.parName2, param.parName3, param.parName4};
-        this.ind1 = Indicators.max(this.high, (int) param.par1); // Верхняя граница канала Дончиана
-        this.ind2 = Indicators.min(this.low, (int) param.par2); // Нижняя граница канала Дончиана
+        this.ind1 = Indicators.rsi(this.high, (int) param.par1); // Верхняя граница канала Дончиана
+//        this.ind2 = Indicators.min(this.low, (int) param.par2); // Нижняя граница канала Дончиана
+        double stopLim = param.par2; // уровень стопа в процентах от цены открытия
+        double mult = param.par3; // отношение уровня тэйка к с уровню стопа (раз)
+        int curPos = 0;  // наличие или отсутсвие позиции, записывается в [9] 0 или 1
+        int quPos = 0;  // количество лотов в открытой позиции, только положительное целое число
+        int iInp = 0;  // индекс строки входа в позицию
+        int quLots = 1;  // фиксированное количество лотов, которым торгуем в одной сделке
+        double stopLoss = -1; // Уровень стоп-лосса
+        double takeProf = -1; // Уровень тейк-профита
+        double opCl = 0;  // котировка открытия / закрытия позиции
+        boolean activeTrailStopLong = false; //  переменная условие - активен ли трэйл для лонга стоп False - нет, True - да
+        boolean activeTrailStopShort = false; //  переменная условие - активен ли трэйл для шорта стоп False - нет, True - да
+        double trStopLossShift = param.par2; // Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу)
+        double trailStopStart = param.par4; // процент на который должна вырасти позиция, чтобы активировать трейл-стоп
+        for (int i = startIndex + 2; i < this.close.length; i++) {
+            boolean le = (this.ind1[i - 2] < 30 && this.ind1[i - 1] > 30) && this.ind1[i - 2] != 0.0;// сигнал входа в лонг
+            boolean se = (this.ind1[i - 2] > 70 && this.ind1[i - 1] < 70) && this.ind1[i - 2] != 0.0; // сигнал входа в шорт
+            boolean lxt = this.high[i] >= takeProf; // сигнал выхода из лонга по тейк-профиту
+            boolean lxs = this.low[i] <= stopLoss; // сигнал выхода из лонга по стоп-лоссу (то же самое)
+            boolean sxt = this.low[i] <= takeProf; // сигнал выхода из шорта по тейк-профиту
+            boolean sxs = this.high[i] >= stopLoss; // сигнал выхода из шорта по стоп-лоссу (то же самое)
+            boolean cp = isToClosePos(i); // Если true, то закрываем позицию принудительно.
+            boolean nop = isToNotOpenPos(i); // Если false, то нельзя открывать позицию.
+            boolean ncp = isNotToClosePos(i); // Если false, то нельзя закрывать позицию.
+            if (curPos == 0 && quPos == 0) {  // если нет позиции
+                if ((le && this.ind1[i - 1] != 0.0 && nop) || (se && this.ind1[i - 1] != 0.0  && nop)) {
+                    quPos += quLots;
+                    opCl = this.open[i];
+                    price[i] = opCl;
+                    if (le && this.ind1[i - 1] != 0.0) {  // сигнал открытия в лонг
+                        curPos = 1;
+                        stopLoss = opCl * ((100 - stopLim) / 100);
+                        takeProf = opCl * ((100 + stopLim * mult) / 100);
+                        signal[i] = "le";
+                    } else if (se && this.ind1[i - 1] != 0.0) {
+                        curPos = -1;
+                        stopLoss = opCl * ((100 + stopLim) / 100);
+                        takeProf = opCl * ((100 - stopLim * mult) / 100);
+                        signal[i] = "se";
+                    }
+                } else {
+                    price[i] = 0;
+                    signal[i] = "0";
+                }
+                pos[i] = curPos;
+                quan[i] = quPos;
+                stopLossArr[i] = stopLoss;
+
+            } else if (curPos == 1) { // если есть лонговая позиция
+                stopLossArr[i] = stopLoss;
+                if ((lxt && ncp) || (lxs && ncp) || cp) {
+                    curPos = 0;
+                    pos[i] = curPos;
+                    quPos -= quLots;
+                    quan[i] = quPos;
+                    if (lxt && ncp) {
+                        price[i] = takeProf;
+                        signal[i] = "lxt";
+                    } else if (lxs && ncp) {
+                        price[i] = stopLoss;
+                        signal[i] = "lxs";
+                    } else if (cp) {
+                        price[i] = this.open[i];
+                        signal[i] = "cp";
+                    }
+                    stopLoss = -1;
+                    takeProf = -1;
+                    if (Settings.TRAIL_STOP) {
+                        activeTrailStopLong = false;
+                    }
+
+                } else {
+                    pos[i] = curPos;
+                    quan[i] = quPos;
+                    signal[i] = "0";
+                    if (Settings.TRAIL_STOP) {
+                        if (activeTrailStopLong) { // Если трэйл-стоп в лонг активен, то...
+                            if (this.high[i] * ((100 - trStopLossShift) / 100) > stopLoss ) {
+                                stopLoss = this.high[i] * ((100 - trStopLossShift) / 100);
+                            }
+                        } else if (this.high[i] >= opCl * ((100 + trailStopStart) / 100)) { // Иначе если трэйл-стоп в лонг не активен
+                            activeTrailStopLong = true; // Активируем трэйл-стоп в лонг
+                            stopLoss = this.high[i] * ((100 - trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                        }
+                    }
+                }
+            } else if (curPos == -1) { // если есть шортовая позиция
+                stopLossArr[i] = stopLoss;
+                if ((sxt && ncp) || (sxs && ncp) || cp) {
+                    curPos = 0;
+                    pos[i] = curPos;
+                    quPos -= quLots;
+                    quan[i] = quPos;
+                    if(sxt && ncp) {
+                        price[i] = takeProf;
+                        signal[i] = "sxt";
+                    } else if (sxs && ncp) {
+                        price[i] = stopLoss;
+                        signal[i] = "sxs";
+                    } else if (cp) {
+                        price[i] = this.open[i];
+                        signal[i] = "cp";
+                    }
+                    stopLoss = -1;
+                    takeProf = -1;
+                    if (Settings.TRAIL_STOP){
+                        activeTrailStopShort = false;
+                    }
+
+                } else {
+                    pos[i] = curPos;
+                    quan[i] = quPos;
+                    signal[i] = "0";
+                    if (Settings.TRAIL_STOP) {
+                        if (activeTrailStopShort) { // Если трэйл-стоп в шорт активен, то...
+                            if (this.low[i] * ((100 + trStopLossShift) / 100) < stopLoss) {
+                                stopLoss = this.low[i] * ((100 + trStopLossShift) / 100);
+                            }
+                        } else if (this.low[i] <= opCl * ((100 - trailStopStart) / 100)) { // Иначе если трэйл-стоп в шорт не активен
+                            activeTrailStopShort = true; // Активируем трэйл-стоп в шорт
+                            stopLoss = this.low[i] * ((100 + trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                        }
+                    }
+                }
+            }
+        }
+        this.pos = pos;
+        this.quan = quan;
+        this.price = price;
+        this.stopLoss = stopLossArr;
+        this.ind3 = new double[getClose().length];
+        Arrays.fill(this.ind3, stopLim);
+        this.ind4 = new double[getClose().length];
+        Arrays.fill(this.ind4, mult);
+        this.signal = signal;
+    }
+
+    /**
+     * Алгоритм простроенный на пробое симметричного ценового канала от ЕМА в обе стороны, может быть использован как обычный
+     * стоп-лосс, так и трейл стоп. Тейк обозначен как мультипликатор от размера стопа.
+     * @param param Объект класса Parameter, содержащий параметры для работы данного торгового алгоритма:
+     *              1) Период расчёта центральной EMA.
+     *              2) Ширина канала от центра к краю в процентах.
+     *              3) Стоп-лосс в процентах от цены открытия.
+     *              4) Мультипликатор для расчёта цены тейк-профита от размера стоп-лосса в процентах.
+     *              5) Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу).
+     */
+    public void robPrChEmaSimTrStop_v_0_1(Parameter param) {
+        /*
+        Назавания параметров:
+        1 - "Period" - Период расчёта центральной EMA.
+        2 - "Channel" - Ширина канала от центра к краю в процентах.
+        3 - "StopLoss" - Стоп-лосс в процентах от цены открытия.
+        4 - "Multiplier" - Мультипликатор для расчёта цены тейк-профита от размера стоп-лосса в процентах.
+        5 - "trStopLossShift" - Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу).
+
+        StringBuilder parName1 = new StringBuilder("Period");
+        StringBuilder parName2 = new StringBuilder("Channel");
+        StringBuilder parName3 = new StringBuilder("StopLoss");
+        StringBuilder parName4 = new StringBuilder("Multiplier");
+        StringBuilder parName5 = new StringBuilder("trStopLossShift");
+
+        double[][] steps = new double[][] {{10, 0.5, 0.3, 0.5, 0.3}};
+        double[] parRange1 = new double[] {10, 200, steps[z][0]};
+	    double[] parRange2 = new double[] {0.5, 2.5, steps[z][1]};
+	    double[] parRange3 = new double[] {0.3, 1.5, steps[z][2]};
+	    double[] parRange4 = new double[] {1.5, 3.5, steps[z][3]};
+	    double[] parRange5 = new double[] {0.3, 0.9, steps[z][4]};
+	    ParRange param = new ParRange();
+	    param.setParRange(parRange1, parRange2, parRange3, parRange4, parRange5, parName1, parName2, parName3, parName4, parName5);
+         */
+        this.comment = "Алгоритм основанный на пробое симметричного ценового канала и закреплении на цене закрытия";
+        this.parameters = new double[]{param.par1, param.par2, param.par3, param.par4, param.par5};
+        int[] pos = new int[this.getClose().length];
+        int[] quan = new int[this.getClose().length];
+        double[] price = new double[this.getClose().length];
+        double[] stopLossArr = new double[this.getClose().length];
+        String[] signal = new String[this.getClose().length];
+        this.paramNames = new StringBuilder[]{param.parName1, param.parName2, param.parName3, param.parName4, param.parName5};
+        double[] ema = Indicators.ema(this.close, (int) param.par1);
+        this.ind1 = Indicators.upperChnlBorder(ema, param.par2); // Верхняя граница ценового канала.
+        this.ind2 = Indicators.lowerChnlBorder(ema, param.par2); // Нижняя граница ценового канала.
         double stopLim = param.par3; // уровень стопа в процентах от цены открытия
         double mult = param.par4; // отношение уровня тэйка к с уровню стопа (раз)
         int curPos = 0;  // наличие или отсутсвие позиции, записывается в [9] 0 или 1
@@ -1664,11 +1856,11 @@ public class Working extends QuoteColArr {
         int quLots = 1;  // фиксированное количество лотов, которым торгуем в одной сделке
         double stopLoss = -1; // Уровень стоп-лосса
         double takeProf = -1; // Уровень тейк-профита
-        double trStopLossShift = 0.5; // Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу)
         double opCl = 0;  // котировка открытия / закрытия позиции
         boolean activeTrailStopLong = false; //  переменная условие - активен ли трэйл для лонга стоп False - нет, True - да
         boolean activeTrailStopShort = false; //  переменная условие - активен ли трэйл для шорта стоп False - нет, True - да
-        double trailStopStart = 0.6; // процент на который должна вырасти позиция, чтобы активировать трейл-стоп
+        double trailStopStart = param.par3; // Процент на который должна вырасти позиция, чтобы активировать трейл-стоп
+        double trStopLossShift = param.par5; // Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу)
         for (int i = startIndex + 2; i < this.close.length; i++) {
             boolean le = (this.close[i - 1] > this.ind1[i - 2]) && this.ind1[i - 2] != 0.0;// сигнал входа в лонг
             boolean se = (this.close[i - 1] < this.ind2[i - 2]) && this.ind2[i - 2] != 0.0; // сигнал входа в шорт
@@ -1789,8 +1981,14 @@ public class Working extends QuoteColArr {
         Arrays.fill(this.ind3, stopLim);
         this.ind4 = new double[getClose().length];
         Arrays.fill(this.ind4, mult);
+        this.ind5 = new double[getClose().length];
+        Arrays.fill(this.ind5, trStopLossShift);
+
         this.signal = signal;
+
+
     }
+
 
 }
 

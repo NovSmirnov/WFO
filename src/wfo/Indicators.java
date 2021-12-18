@@ -204,4 +204,33 @@ public class Indicators {
         }
         return newArr;
     }
+
+    /**
+     * Метод для расчёта верхней границы ценового канала, который обозначен в процентах от скользящей средней.
+     * @param ma Массив со значениями скользящей средней.
+     * @param pers Размер верхней границы ценового канала в процентах.
+     * @return Массив со значениями верхней границы ценового канала.
+     */
+    public static double[] upperChnlBorder (double[] ma, double pers) {
+        double[] newLine = new double[ma.length];
+        for (int i = 0; i < ma.length; i++) {
+            newLine[i] = ma[i] * ((100 + pers) / 100);
+        }
+        return newLine;
+    }
+
+    /**
+     * Метод для расчёта нижней границы ценового канала, который обозначен в процентах от скользящей средней.
+     * @param ma Массив со значениями скользящей средней.
+     * @param pers Размер нижней границы ценового канала в процентах.
+     * @return Массив со значениями нижней границы ценового канала.
+     */
+    public static double[] lowerChnlBorder (double[] ma, double pers) {
+        double[] newLine = new double[ma.length];
+        for (int i = 0; i < ma.length; i++) {
+            newLine[i] = ma[i] * ((100 - pers) / 100);
+        }
+        return newLine;
+    }
+
 }
