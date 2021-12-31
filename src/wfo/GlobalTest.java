@@ -9,10 +9,10 @@ import java.util.concurrent.Semaphore;
 
 public class GlobalTest {
     public static void robFunc(FinRes a, Parameter param) {
-        a.robPrChEmaSimTrStop_v_0_1(param);
+        a.robDonchZakrepAsimTrStop_v_0_1(param);
     }  // !!! «¿œŒÀÕﬂ≈Ã
 
-    public final static String ROB_NAME = "robPrChEmaSimTrStop_v_0_1"; // !!! «¿œŒÀÕﬂ≈Ã
+    public final static String ROB_NAME = "robDonchZakrepAsimTrStop_v_0_1"; // !!! «¿œŒÀÕﬂ≈Ã
 
     protected static List<WFOTester> globList;
     

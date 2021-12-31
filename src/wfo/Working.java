@@ -670,9 +670,9 @@ public class Working extends QuoteColArr {
                 }
             }
             boolean isClosePosition = false;
-            if (dayOfWeek == 5 && time >= Settings.FINISH_TIME_FRIDAY) {
+            if ((dayOfWeek == 5) && (time >= Settings.FINISH_TIME_FRIDAY)) {
                 isClosePosition = true;
-            } else if (isPreHolidays || isPreJointDay && time >= Settings.FINISH_TIME_FRIDAY) {
+            } else if ((isPreHolidays || isPreJointDay) && (time >= Settings.FINISH_TIME_FRIDAY)) {
                 isClosePosition = true;
             }
             return isClosePosition;
@@ -735,15 +735,15 @@ public class Working extends QuoteColArr {
             boolean isToNotOpenPos = false;
             if (time <= Settings.START_EVERYDAY) {
                 isToNotOpenPos = true;
-            } else if (dayOfWeek == 5 && time >= Settings.FINISH_TIME_FRIDAY) {
+            } else if ((dayOfWeek == 5) && (time >= Settings.FINISH_TIME_FRIDAY)) {
                 isToNotOpenPos = true;
-            } else if (isPreHolidays || isPreJointDay && time >= Settings.FINISH_TIME_FRIDAY) {
+            } else if ((isPreHolidays || isPreJointDay) && (time >= Settings.FINISH_TIME_FRIDAY)) {
                 isToNotOpenPos = true;
-            } else if (isAfterJointDay && time <= Settings.AFTER_JOINT_START) {
+            } else if (isAfterJointDay && (time <= Settings.AFTER_JOINT_START)) {
                 isToNotOpenPos = true;
-            } else if (isAfterHolidaystDay && time <= Settings.START_TIME_MONDAY) {
+            } else if (isAfterHolidaystDay && (time <= Settings.START_TIME_MONDAY)) {
                 isToNotOpenPos = true;
-            } else if (dayOfWeek == 1 && time <= Settings.START_TIME_MONDAY) {
+            } else if ((dayOfWeek == 1) && (time <= Settings.START_TIME_MONDAY)) {
                 isToNotOpenPos = true;
             }
             return !isToNotOpenPos;
