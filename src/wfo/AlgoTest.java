@@ -4,20 +4,21 @@ import java.io.IOException;
 
 public class AlgoTest {
     public static void main(String[] args) throws IOException {
-        StringBuilder parName1 = new StringBuilder("MaxPeriod");
-        StringBuilder parName2 = new StringBuilder("MinPeriod");
-        StringBuilder parName3 = new StringBuilder("StopLoss");
-        StringBuilder parName4 = new StringBuilder("Multiplier");
-        double par1 = 100;
-        double par2 = 100;
-        double par3 = 0.3;
-        double par4 = 2;
+        StringBuilder parName1 = new StringBuilder("Period");
+        StringBuilder parName2 = new StringBuilder("StopLoss");
+        StringBuilder parName3 = new StringBuilder("Multiplier");
+        StringBuilder parName4 = new StringBuilder("trStopLossShift");
+        double par1 = 9;
+        double par2 = 0.5;
+        double par3 = 1.5;
+        double par4 = 0.6;
+
 
 //        double par1 = 0.6; // Параметр 1
 //        double par2 = 2.5; // Параметр 2
 //        double par3 = 0.6; // Параметр 3
 //        double par4 = 2.5; // Параметр 3
-        int quWeeks = 2; // Количество недель для тестирования алгоритма от последней даты загруженной котировки.
+        int quWeeks = 54; // Количество недель для тестирования алгоритма от последней даты загруженной котировки.
         double comission = 3; // Комиссия в единицах измерения котировки.
         String pathToFileIn = "J:\\ROB\\TEST_FINAM\\1Eu.txt";
         String pathToFileOut = "J:\\ROB\\JavaProject\\Tests\\testfile1.csv";
@@ -35,7 +36,7 @@ public class AlgoTest {
         a.setQuote(pathToFileIn);
         a.workArr(quWeeks + 5);
         a.compressorIn(5);
-        FinRes b = a.singleRunArr(20211011, 20211111);
+        FinRes b = a.singleRunArr(20210726, 20220128);
         System.out.println("Индекс начала работы алгоритма:  " + b.startIndex);
         b.setCom(comission);
         GlobalTest.robFunc(b, parameters); // !!! Тестируемый алгорим заполнить в GlobalTest.

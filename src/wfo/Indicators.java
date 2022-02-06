@@ -78,13 +78,14 @@ public class Indicators {
         Core core = new Core();
         core.rsi(startIdx, endIdx, closePrices, OPT_IN_TIME_PERIOD, outBegIdx, outNbElement, outReal);
 
-        int index = outReal.length - 1;
-        double[] newArr = new double[index + 1];
-        for (double z : outReal) {
-            newArr[index] = z;
-            index--;
-        }
-        return newArr;
+//        int index = outReal.length - 1;
+//        double[] newArr = new double[index + 1];
+//        for (double z : outReal) {
+//            newArr[index] = z;
+//            index--;
+//        }
+//        return newArr;
+        return normalizer(outBegIdx, outNbElement, outReal);
     }
 
     /**

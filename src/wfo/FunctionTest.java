@@ -9,16 +9,10 @@ public class FunctionTest {
     public static void main(String[] args) throws IOException {
         long start = System.currentTimeMillis();
 
-
-
-        FinRes a = new FinRes();
-        a.setQuote("C:\\Users\\SMIRNOV_AV\\Desktop\\PY\\FINAM_TXT\\1Eu.txt");
-        a.workArr(1);
-        a.compressorIn(5);
-        double[] b = Indicators.parabolicSAR(a.getHigh(), a.getLow(), 0.02, 0.2);
+        double[] a = {87886, 87876, 87895, 87881, 87888, 87902, 87920, 87910, 87922, 87920, 87937, 87918, 87909, 87928, 87942, 87794};
+        double[] b = Indicators.rsi(a, 9);
         System.out.println(Arrays.toString(b));
-        System.out.println(Arrays.toString(a.getHigh()));
-        System.out.println(Arrays.toString(a.getLow()));
+        System.out.println(Arrays.toString(a));
 
 //        for (int i = 0; i < 30; i++) {
 //            System.out.print(b[i] + "," + " ");

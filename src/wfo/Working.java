@@ -164,7 +164,7 @@ public class Working extends QuoteColArr {
      * Создаёт новый объект класса FinRes для одиночного тестирования множества прогонов или вывода значений работы
      * торгового алгоритма, отрезок формируется исходя из ограничивающих дат.
      * @param firstDate Дата начала работы алгоритма. (включена)
-     * @param secondDate Лата окончиния работы алгоритма (включена)
+     * @param secondDate Дата окончания работы алгоритма (включена)
      * @return Новый объект класса FinRes для одиночного тестирования множества прогонов или вывода значений работы.
      */
     public FinRes singleRunArr (int firstDate, int secondDate) {
@@ -1143,7 +1143,7 @@ public class Working extends QuoteColArr {
         int quLots = 1;  // фиксированное количество лотов, которым торгуем в одной сделке
         double stopLoss = -1; // Уровень стоп-лосса
         double takeProf = -1; // Уровень тейк-профита
-        double trStopLossShift = 0.5; // Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу)
+        double trStopLossShift = stopLim; // Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу)
         double opCl = 0;  // котировка открытия / закрытия позиции
         boolean activeTrailStopLong = false; //  переменная условие - активен ли трэйл для лонга стоп False - нет, True - да
         boolean activeTrailStopShort = false; //  переменная условие - активен ли трэйл для шорта стоп False - нет, True - да
@@ -1211,12 +1211,12 @@ public class Working extends QuoteColArr {
                     signal[i] = "0";
                     if (Settings.TRAIL_STOP) {
                         if (activeTrailStopLong) { // Если трэйл-стоп в лонг активен, то...
-                            if (this.high[i] * ((100 - trStopLossShift) / 100) > stopLoss ) {
-                                stopLoss = this.high[i] * ((100 - trStopLossShift) / 100);
+                            if (this.high[i] / ((100 + trStopLossShift) / 100) > stopLoss ) {
+                                stopLoss = this.high[i] / ((100 + trStopLossShift) / 100);
                             }
-                        } else if (this.high[i] >= opCl * ((100 + trailStopStart) / 100)) { // Иначе если трэйл-стоп в лонг не активен
+                        } else if (this.high[i] >= opCl / ((100 - trailStopStart) / 100)) { // Иначе если трэйл-стоп в лонг не активен
                             activeTrailStopLong = true; // Активируем трэйл-стоп в лонг
-                            stopLoss = this.high[i] * ((100 - trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                            stopLoss = this.high[i] / ((100 + trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
                         }
                     }
                 }
@@ -1249,12 +1249,12 @@ public class Working extends QuoteColArr {
                     signal[i] = "0";
                     if (Settings.TRAIL_STOP) {
                         if (activeTrailStopShort) { // Если трэйл-стоп в шорт активен, то...
-                            if (this.low[i] * ((100 + trStopLossShift) / 100) < stopLoss) {
-                                stopLoss = this.low[i] * ((100 + trStopLossShift) / 100);
+                            if (this.low[i] / ((100 - trStopLossShift) / 100) < stopLoss) {
+                                stopLoss = this.low[i] / ((100 - trStopLossShift) / 100);
                             }
-                        } else if (this.low[i] <= opCl * ((100 - trailStopStart) / 100)) { // Иначе если трэйл-стоп в шорт не активен
+                        } else if (this.low[i] <= opCl / ((100 + trailStopStart) / 100)) { // Иначе если трэйл-стоп в шорт не активен
                             activeTrailStopShort = true; // Активируем трэйл-стоп в шорт
-                            stopLoss = this.low[i] * ((100 + trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                            stopLoss = this.low[i] / ((100 - trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
                         }
                     }
                 }
@@ -1306,7 +1306,7 @@ public class Working extends QuoteColArr {
 	    ParRange param = new ParRange();
 	    param.setParRange(parRange1, parRange2, parRange3, parRange4, parRange5, parName1, parName2, parName3, parName4, parName5);
          */
-        this.comment = "Алгоритм основанный на пробое и закреплении симетричных полос Болинджера и возможностью трейл стопа";
+        this.comment = "Алгоритм основанный на пробое и закреплении симметричных полос Болинджера и возможностью трейл стопа";
         this.parameters = new double[]{param.par1, param.par2, param.par3, param.par4, param.par5};
         int[] pos = new int[this.getClose().length];
         int[] quan = new int[this.getClose().length];
@@ -1328,8 +1328,8 @@ public class Working extends QuoteColArr {
         double opCl = 0;  // котировка открытия / закрытия позиции
         boolean activeTrailStopLong = false; //  переменная условие - активен ли трэйл для лонга стоп False - нет, True - да
         boolean activeTrailStopShort = false; //  переменная условие - активен ли трэйл для шорта стоп False - нет, True - да
-        double trailStopStart = param.par3; // Процент на который должна вырасти позиция, чтобы активировать трейл-стоп
-        double trStopLossShift = param.par5; // Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу)
+        double trailStopStart = param.par3; // Процент на который должна вырасти позиция, чтобы активировать трейл-стоп !!! TrailEnable
+        double trStopLossShift = param.par5; // Уровень трейл-стопа от текущей цены в процентах(пересчёт каждую свечу) !!! TrailLoss
         for (int i = startIndex + 2; i < this.close.length; i++) {
             boolean le = (this.close[i - 1] > this.ind1[i - 2]) && this.ind1[i - 2] != 0.0;// сигнал входа в лонг
             boolean se = (this.close[i - 1] < this.ind2[i - 2]) && this.ind2[i - 2] != 0.0; // сигнал входа в шорт
@@ -1393,12 +1393,12 @@ public class Working extends QuoteColArr {
                     signal[i] = "0";
                     if (Settings.TRAIL_STOP) {
                         if (activeTrailStopLong) { // Если трэйл-стоп в лонг активен, то...
-                            if (this.high[i] * ((100 - trStopLossShift) / 100) > stopLoss ) {
-                                stopLoss = this.high[i] * ((100 - trStopLossShift) / 100);
+                            if (this.high[i] / ((100 + trStopLossShift) / 100) > stopLoss ) {
+                                stopLoss = this.high[i] / ((100 + trStopLossShift) / 100);
                             }
-                        } else if (this.high[i] >= opCl * ((100 + trailStopStart) / 100)) { // Иначе если трэйл-стоп в лонг не активен
+                        } else if (this.high[i] >= opCl / ((100 - trailStopStart) / 100)) { // Иначе если трэйл-стоп в лонг не активен
                             activeTrailStopLong = true; // Активируем трэйл-стоп в лонг
-                            stopLoss = this.high[i] * ((100 - trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                            stopLoss = this.high[i] / ((100 + trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
                         }
                     }
                 }
@@ -1431,12 +1431,12 @@ public class Working extends QuoteColArr {
                     signal[i] = "0";
                     if (Settings.TRAIL_STOP) {
                         if (activeTrailStopShort) { // Если трэйл-стоп в шорт активен, то...
-                            if (this.low[i] * ((100 + trStopLossShift) / 100) < stopLoss) {
-                                stopLoss = this.low[i] * ((100 + trStopLossShift) / 100);
+                            if (this.low[i] / ((100 - trStopLossShift) / 100) < stopLoss) {
+                                stopLoss = this.low[i] / ((100 - trStopLossShift) / 100);
                             }
-                        } else if (this.low[i] <= opCl * ((100 - trailStopStart) / 100)) { // Иначе если трэйл-стоп в шорт не активен
+                        } else if (this.low[i] <= opCl / ((100 + trailStopStart) / 100)) { // Иначе если трэйл-стоп в шорт не активен
                             activeTrailStopShort = true; // Активируем трэйл-стоп в шорт
-                            stopLoss = this.low[i] * ((100 + trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                            stopLoss = this.low[i] / ((100 - trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
                         }
                     }
                 }
@@ -1625,7 +1625,6 @@ public class Working extends QuoteColArr {
         this.signal = signal;
     }
 
-
     /**
      * Простой алгоритм построеный на принципе пробития уровней осцилятора RSI . Пробитие уровня 30 в сторону центра - лонг,
      * пробитие уровня 70 в сторону центра - шорт.
@@ -1743,12 +1742,12 @@ public class Working extends QuoteColArr {
                     signal[i] = "0";
                     if (Settings.TRAIL_STOP) {
                         if (activeTrailStopLong) { // Если трэйл-стоп в лонг активен, то...
-                            if (this.high[i] * ((100 - trStopLossShift) / 100) > stopLoss ) {
-                                stopLoss = this.high[i] * ((100 - trStopLossShift) / 100);
+                            if (this.high[i] / ((100 + trStopLossShift) / 100) > stopLoss ) {
+                                stopLoss = this.high[i] / ((100 + trStopLossShift) / 100);
                             }
-                        } else if (this.high[i] >= opCl * ((100 + trailStopStart) / 100)) { // Иначе если трэйл-стоп в лонг не активен
+                        } else if (this.high[i] >= opCl / ((100 - trailStopStart) / 100)) { // Иначе если трэйл-стоп в лонг не активен
                             activeTrailStopLong = true; // Активируем трэйл-стоп в лонг
-                            stopLoss = this.high[i] * ((100 - trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                            stopLoss = this.high[i] / ((100 + trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
                         }
                     }
                 }
@@ -1781,12 +1780,12 @@ public class Working extends QuoteColArr {
                     signal[i] = "0";
                     if (Settings.TRAIL_STOP) {
                         if (activeTrailStopShort) { // Если трэйл-стоп в шорт активен, то...
-                            if (this.low[i] * ((100 + trStopLossShift) / 100) < stopLoss) {
-                                stopLoss = this.low[i] * ((100 + trStopLossShift) / 100);
+                            if (this.low[i] / ((100 - trStopLossShift) / 100) < stopLoss) {
+                                stopLoss = this.low[i] / ((100 - trStopLossShift) / 100);
                             }
-                        } else if (this.low[i] <= opCl * ((100 - trailStopStart) / 100)) { // Иначе если трэйл-стоп в шорт не активен
+                        } else if (this.low[i] <= opCl / ((100 + trailStopStart) / 100)) { // Иначе если трэйл-стоп в шорт не активен
                             activeTrailStopShort = true; // Активируем трэйл-стоп в шорт
-                            stopLoss = this.low[i] * ((100 + trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                            stopLoss = this.low[i] / ((100 - trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
                         }
                     }
                 }
@@ -1924,12 +1923,12 @@ public class Working extends QuoteColArr {
                     signal[i] = "0";
                     if (Settings.TRAIL_STOP) {
                         if (activeTrailStopLong) { // Если трэйл-стоп в лонг активен, то...
-                            if (this.high[i] * ((100 - trStopLossShift) / 100) > stopLoss ) {
-                                stopLoss = this.high[i] * ((100 - trStopLossShift) / 100);
+                            if (this.high[i] / ((100 + trStopLossShift) / 100) > stopLoss ) {
+                                stopLoss = this.high[i] / ((100 + trStopLossShift) / 100);
                             }
-                        } else if (this.high[i] >= opCl * ((100 + trailStopStart) / 100)) { // Иначе если трэйл-стоп в лонг не активен
+                        } else if (this.high[i] >= opCl / ((100 - trailStopStart) / 100)) { // Иначе если трэйл-стоп в лонг не активен
                             activeTrailStopLong = true; // Активируем трэйл-стоп в лонг
-                            stopLoss = this.high[i] * ((100 - trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                            stopLoss = this.high[i] / ((100 + trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
                         }
                     }
                 }
@@ -1962,12 +1961,12 @@ public class Working extends QuoteColArr {
                     signal[i] = "0";
                     if (Settings.TRAIL_STOP) {
                         if (activeTrailStopShort) { // Если трэйл-стоп в шорт активен, то...
-                            if (this.low[i] * ((100 + trStopLossShift) / 100) < stopLoss) {
-                                stopLoss = this.low[i] * ((100 + trStopLossShift) / 100);
+                            if (this.low[i] / ((100 - trStopLossShift) / 100) < stopLoss) {
+                                stopLoss = this.low[i] / ((100 - trStopLossShift) / 100);
                             }
-                        } else if (this.low[i] <= opCl * ((100 - trailStopStart) / 100)) { // Иначе если трэйл-стоп в шорт не активен
+                        } else if (this.low[i] <= opCl / ((100 + trailStopStart) / 100)) { // Иначе если трэйл-стоп в шорт не активен
                             activeTrailStopShort = true; // Активируем трэйл-стоп в шорт
-                            stopLoss = this.low[i] * ((100 + trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
+                            stopLoss = this.low[i] / ((100 - trStopLossShift) / 100); // Переносим стоп-лосс на новый уровень
                         }
                     }
                 }
@@ -1988,7 +1987,6 @@ public class Working extends QuoteColArr {
 
 
     }
-
 
 }
 

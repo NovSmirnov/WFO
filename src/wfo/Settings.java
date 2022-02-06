@@ -23,7 +23,7 @@ public class Settings {
     public final static int START_TIME_MONDAY = 90000;
     public final static int START_EVERYDAY = 71500;
     public final static int AFTER_JOINT_START = 120000;
-    public final static int FINISH_TIME_FRIDAY = 180000;
+    public final static int FINISH_TIME_FRIDAY = 180500;
     public final static int[] PRE_HOLIDAYS = {20200611, 20201103, 20201230, 20210106, 20211103, 20213012};
     public final static int[] AFTER_HOLIDAYS_DAYS = {20200615, 20201105, 20210104, 20210111, 20210309, 20210614, 20211108,20220103};
     public final static int[] PRE_JOINT_DAYS = {20200306, 20200609, 20200909, 20201209, 20210309,
